@@ -1,0 +1,64 @@
+{% extends 'app/base.html' %}
+{% load static %}
+{% block title %}Customer Registration{% endblock title %}
+{% block main-content %}
+<div class="container">
+ <div class="row my-3">
+  <div class="col-sm-6 offset-sm-3">
+   <h3>Customer Registration</h3>
+   <hr>
+
+   <form action="" method="post" novalidate class="shadow p-5">
+   {% if messages %}
+      {% for message in messages %}
+         <p {% if message.tags %} class="alert alert-{{message.tags}} mb-5" {% endif %}>{{message}}</p>
+      {% endfor %}
+   {% endif %}
+
+      {% csrf_token %}
+      
+      <!-- Username Field -->
+      <div class="form-group mb-3">
+         <label class="form-label">{{ form.username.label_tag }}</label>
+         <input type="{{ form.username.field.widget.input_type }}" name="{{ form.username.name }}" class="form-control" placeholder="{{ form.username.label }}" required>
+         <small class="text-danger">{{ form.username.errors|striptags }}</small>
+      </div>
+
+      <!-- Email Field -->
+      <div class="form-group mb-3">
+         <label class="form-label">{{ form.email.label_tag }}</label>
+         <input type="{{ form.email.field.widget.input_type }}" name="{{ form.email.name }}" class="form-control" placeholder="{{ form.email.label }}" required>
+         <small class="text-danger">{{ form.email.errors|striptags }}</small>
+      </div>
+
+      <!-- Password Field -->
+      <div class="form-group mb-3">
+         <label class="form-label">{{ form.password1.label_tag }}</label>
+         <input type="{{ form.password1.field.widget.input_type }}" name="{{ form.password1.name }}" class="form-control" placeholder="{{ form.password1.label }}" required>
+         <small class="text-danger">{{ form.password1.errors|striptags }}</small>
+      </div>
+
+      <!-- Confirm Password Field -->
+      <div class="form-group mb-3">
+         <label class="form-label">{{ form.password2.label_tag }}</label>
+         <input type="{{ form.password2.field.widget.input_type }}" name="{{ form.password2.name }}" class="form-control" placeholder="{{ form.password2.label }}" required>
+         <small class="text-danger">{{ form.password2.errors|striptags }}</small>
+      </div>
+      
+      <input type="submit" value="Submit" class="btn btn-primary">
+      <br>
+      
+      <div class="text-center text-primary fw-bold">
+         <small>Existing User? <a href="{% url 'login' %}" class="text-danger">Login Now</a></small>
+      </div>
+      
+      {% if form.non_field_errors %}
+         {% for error in form.non_field_errors %}
+            <p class="alert alert-danger my-3">{{ error }}</p> 
+         {% endfor %}
+      {% endif %}
+   </form>
+  </div>
+ </div>
+</div>
+{% endblock main-content %}

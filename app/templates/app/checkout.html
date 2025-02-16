@@ -1,0 +1,113 @@
+{% extends 'app/base.html' %}
+{% load static %}
+{% block title %}Checkout{% endblock title %}
+{% block main-content %}
+<div class="container">
+ <div class="row mt-5">
+  <div class="col-sm-6">
+    <h4>Order Summary</h4>
+    <hr>
+    {% for item in cart_items %}
+      <div class="card mb-2">
+        <div class="card-body">
+          <h5>Product: {{item.product.title}}</h5>
+          <p>Quantity: {{item.quantity}}</p>
+          <p class="fw-bold">Price: {{item.total_cost}}</p>
+        </div>
+      </div>
+      {% endfor %}
+      <p class="fw-bold">Total Cost + 70 TL = {{totalamount}}</p>
+  </div>
+  <div class="col-sm-4 offset-sm-1">
+    <h4>Select Shipping Address</h4>
+    <hr>
+    <form action="/paymentdone">
+      {% for ad in add %}
+      <div class="card"> 
+        <div class="card-body">
+        <h5>{{ad.name}}</h5>
+        <p>{{ad.locality}},{{ad.city}},{{ad.state}}-{{ad.zipcode}}</p>
+        </div>
+      </div>
+        <div class="form-check mt-2 mb-5">
+          <input class="form-check-input" type="radio" name="custid" id="custadd{{forloop.counter}}" value="{{ad.id}}">
+          <label class="form-check-label fw-bold" for="custadd{{forloop.counter}}">
+            Address: {{forloop.counter}} </label>
+        </div>
+        {% endfor %}
+        <div class="text-end">
+          {% comment %} <button type="submit" class="btn btn-warning mt-3 px-5 fw-bold">Continue</button> {% endcomment %}
+          <div id="paypal-button-container"></div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock main-content %}
+
+{% block payment-gateway %} 
+
+<script src="https://www.paypal.com/sdk/js?client-id=test&currency=USD"></script>
+
+<script>
+    // Render the PayPal button into #paypal-button-container
+    paypal.Buttons({
+
+        // Call your server to set up the transaction
+        createOrder: function(data, actions) {
+            return fetch('/demo/checkout/api/paypal/order/create/', {
+                method: 'post'
+            }).then(function(res) {
+                return res.json();
+            }).then(function(orderData) {
+                return orderData.id;
+            });
+        },
+
+        // Call your server to finalize the transaction
+        onApprove: function(data, actions) {
+            return fetch('/demo/checkout/api/paypal/order/' + data.orderID + '/capture/', {
+                method: 'post'
+            }).then(function(res) {
+                return res.json();
+            }).then(function(orderData) {
+                // Three cases to handle:
+                //   (1) Recoverable INSTRUMENT_DECLINED -> call actions.restart()
+                //   (2) Other non-recoverable errors -> Show a failure message
+                //   (3) Successful transaction -> Show confirmation or thank you
+
+                // This example reads a v2/checkout/orders capture response, propagated from the server
+                // You could use a different API or structure for your 'orderData'
+                var errorDetail = Array.isArray(orderData.details) && orderData.details[0];
+
+                if (errorDetail && errorDetail.issue === 'INSTRUMENT_DECLINED') {
+                    return actions.restart(); // Recoverable state, per:
+                    // https://developer.paypal.com/docs/checkout/integration-features/funding-failure/
+                }
+
+                if (errorDetail) {
+                    var msg = 'Sorry, your transaction could not be processed.';
+                    if (errorDetail.description) msg += '\n\n' + errorDetail.description;
+                    if (orderData.debug_id) msg += ' (' + orderData.debug_id + ')';
+                    return alert(msg); // Show a failure message (try to avoid alerts in production environments)
+                }
+
+                // Successful capture! For demo purposes:
+                console.log('Capture result', orderData, JSON.stringify(orderData, null, 2));
+                var transaction = orderData.purchase_units[0].payments.captures[0];
+                alert('Transaction '+ transaction.status + ': ' + transaction.id + '\n\nSee console for all available details');
+
+                // Replace the above to show a success message within this page, e.g.
+                // const element = document.getElementById('paypal-button-container');
+                // element.innerHTML = '';
+                // element.innerHTML = '<h3>Thank you for your payment!</h3>';
+                // Or go to another URL:  actions.redirect('thank_you.html');
+            });
+        }
+
+    }).render('#paypal-button-container');
+</script>
+
+{% endblock payment-gateway %}
+
+
